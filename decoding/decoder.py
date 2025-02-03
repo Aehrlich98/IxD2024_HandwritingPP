@@ -1,5 +1,5 @@
 
-
+# Dictionary that contains all morse symbols
 morse_dict = {
     ".-"    : "a",
     "-..."  : "b",
@@ -40,12 +40,13 @@ morse_dict = {
 }
 
 def decode_morse(morseCode):
-    # 1. take morse code input and disassemple into nested list of lines, words, and symbols
+    # 1. take morse code input and disassemple into nested lists of lines, words, and symbols
     codeLines = morseCode.splitlines()
     codeWords = []
 
     for line in codeLines:
-        codeWords.append(line.split("/"))
+        codeWords.append( list(filter(None, line.split("/"))) ) # split at word separators '/' and filter any empty lists that split("/") creates
+    print(codeWords)
 
     tmpin = [[ [] for j in range(len(codeWords[i]))] for i in range(len(codeWords))]
 
@@ -66,11 +67,10 @@ def decode_morse(morseCode):
             for sign in tmpin[i][j]:
                 # find symbol key in dictionary
                 letter = morse_dict.get(sign)
-                if letter:
+                if letter:                      # If key pair found add letter to current word list
                     tmpout[i][j].append(letter)
-                # If key not found, give default char and output warning
-                else:
-                    tmpout[i][j].append("( ͡° ͜ʖ ͡°)")    # TODO: Set an actual default char here, e.g. " " :P
+                else:                           # If key not found, give default char and output warning
+                    tmpout[i][j].append("Ä")    # TODO: Set an actual default char here, e.g. " "
                     print("WARNING: Code symbol not found in translation dictionary: " + sign)
     del tmpin # mark to free memory
     # print(tmpout)
@@ -84,4 +84,4 @@ def decode_morse(morseCode):
             output += jword
         output += "\n"
 
-    print(output)
+    return output
