@@ -20,12 +20,19 @@ class ArduinoApp(App):
         # Setup serial connection
         self.serial_port = serial.Serial('COM3', 115200, timeout=1)
 
-        # TextInput für die String-Eingabe
-        self.input_text = TextInput(hint_text="Geben Sie einen String ein", size_hint=(1, None), height=100)
+        # TextInput für die String-Eingabe: Nur eine Zeile zulassen
+        self.input_text = TextInput(
+            hint_text="Geben Sie einen String ein", 
+            size_hint=(1, None), 
+            height=100,
+            multiline=False  # Nur eine Zeile zulassen
+        )
+        # Wenn Enter gedrückt wird, soll der Senden-Button ausgelöst werden
+        self.input_text.bind(on_text_validate=self.send_string)
 
         # Button zum Senden des Strings an Arduino
-        self.send_button = Button(text="Senden", size_hint=(1, None), height=100)
-        self.send_button.bind(on_press=self.send_string) 
+        self.send_button = Button(text="An Stift senden", size_hint=(1, None), height=100)
+        self.send_button.bind(on_press=self.send_string)
 
         # Füge Widgets hinzu
         self.layout.add_widget(self.input_text)
@@ -34,6 +41,10 @@ class ArduinoApp(App):
         # Label für die Aufforderung
         self.prompt_label = Label(text="Bitte Wort eingeben:", font_size=24, size_hint=(1, None), height=50)
         #self.layout.add_widget(self.prompt_label)
+        
+        # Label für Erklärung
+        self.explain_label = Label(text="Fahre mit dem Stift über das Papier um den Morsecode zu schreiben.", 
+                                   font_size=24, size_hint=(1, None), height=50)
 
         # Schedule serial reading
         Clock.schedule_interval(self.read_from_serial, 0.01)
@@ -86,12 +97,14 @@ class ArduinoApp(App):
         """Initialisiert die Benutzeroberfläche basierend auf dem Morsecode."""
         Clock.schedule_once(self._initialize_ui)
 
-
-
     def _initialize_ui(self, dt):
         """Setzt die UI auf und fügt Labels hinzu."""
         self.layout.clear_widgets()  # Entfernt alte Labels
         self.symbol_labels = []
+
+        # Füge das Label für die Eingabeaufforderung hinzu
+        #self.layout.add_widget(self.prompt_label)
+        self.layout.add_widget(self.explain_label)
 
         # Äußeres FloatLayout für vollständige Zentrierung
         float_layout = FloatLayout()
@@ -114,9 +127,6 @@ class ArduinoApp(App):
         # Füge die Eingabe und den Senden-Button am unteren Rand hinzu
         self.layout.add_widget(self.input_text)
         self.layout.add_widget(self.send_button)
-
-
-
 
     def reset_ui_for_new_word(self):
         """Setzt die UI zurück, um den neuen String einzugeben."""
