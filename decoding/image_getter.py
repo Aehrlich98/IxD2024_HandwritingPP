@@ -58,4 +58,4 @@ def test_func(iamgeStr):
 	testimg2 = preprocessImg(testimg)
 	testtext = ocrHandler(testimg2)
 	# testtext = ocrHandler( cameraHandler() )
-	print(testtext)
+	return testtext
