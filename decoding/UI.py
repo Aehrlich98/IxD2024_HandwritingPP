@@ -1,12 +1,10 @@
 #import needed UI modules from kivy
-from doctest import OutputChecker
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.textinput import TextInput
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
+from kivy.graphics import Color, Rectangle
 from kivy.clock import Clock
 # import our local module files
 import image_getter
@@ -14,26 +12,37 @@ import decoder
 
 
 class decoderUI(App):
-    # text variable which will contain the last received decoded text block
-    outputtext = "Hello, here you will soon see what text our image recognition progra could recognise and translate :)"
-#BEGIN TEST function
-    def test_all(self):
-        print("::::::: Test camera and OCR :::::::")
-        testtext = image_getter.test_func("morseText001.png")  #"morseSOS_frInternet.png") # "morseText001.png")
-        print(testtext)
-        # test the decoder on an exmaple morse code block
-        print("\n::::::: Test decoder:::::::")
-        test_code = testtext    # "--- ..- -.-. .... / .----\n.-.. --- .-.." #ouch 1\nlol
-        testout = decoder.decode_morse(test_code)
-        print(testout)
-        return testout
-    #END TEST function
+# Variables: update frequency for image decoding process, output text storage, storage for helper classes from custom modules 
+    update_freq_sec = 10
+    outputtext = "...Here you will soon see the decoded text."
+    ocrhandler = None
+    decodeHandler = None
+
+    #update function for the UI, when called, takes an image via ImageGetter class and rectrieves morse code from it, then decodes the text via the custom decoder module. 
+    def update(self, *args):
+        """
+        self.outputtext = self.test_all("")
+        self.l.text = self.outputtext
+        """
+
+        self.image = self.ocrhandler.camera_get_image()
+        self.image = self.ocrhandler.preprocess_image(self.image)
+        self.codeText = self.ocrhandler.read_from_image(self.image)
+        self.clearText = decoder.decode_morse(self.codeText)
+        print("Output code text: " + self.codeText, "\nOutput decoded text: " + self.clearText + "\n")
+        self.l.text = self.clearText
 
     def build(self):
-        self.baselayout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        """ Build function needed for the Kivy UI module to build the inital UI upon class instantiation """
+        self.baselayout = FloatLayout() # BoxLayout(orientation='vertical', padding=10, spacing=10)
+        # constant header displaying the text below, to help explain what's going on.
+        self.header_label = Label(text= "Hello, here you can see what text our image decoding program could recognise :)\nIt runs every " + str(self.update_freq_sec) + " seconds taking a picture with the webcam.", 
+                                  font_size=32,
+                                  size_hint=(0, 0.8),
+                                  pos_hint={'x':0.5, 'y':0.5})
+        self.baselayout.add_widget(self.header_label)
         # Label with dynamic size depending on the amount of text displayed:
         # thanks to Stackoverflow :P (https://stackoverflow.com/questions/18670687/how-i-can-adjust-variable-height-text-property-kivy)
-
         self.b = GridLayout(
             cols=1,
             pos_hint={
@@ -54,28 +63,30 @@ class decoderUI(App):
         self.b.add_widget(self.l)
 
         self.start_all()
-
-        Clock.schedule_interval(self.update, 10) # time to update program: take picture, process, ocr, decode and present on screen.
+        Clock.schedule_interval(self.update, self.update_freq_sec) # time to update program: take picture, process, ocr, decode and present on screen.
         return self.baselayout
 
-    #MAIN function
     def start_all(self):
+        """ Start function, actually just to initiate the ImageGetter helper class """
         print("Started program. Setting up...")
-        check =  image_getter.start_this()
-        # print(check)
-        if check:
-            raise Exception("Camera setup isn't working!\nPlease ensure the webcam is connected and reachable on the computer!")
-        print("Camera set up successfull.\nStart automatic program:")
+        self.ocrhandler = image_getter.ImageGetter()
+        print("Camera set up successfull.\nStarted program.")
 
-        #TEST all
-        # self.test_all()
-    def update(self, *args):
-        print("Update function just called...")
-        self.outputtext = self.test_all()
-        self.l.text = self.outputtext    
-    
-
-
+    #BEGIN TEST function
+    def test_all(self, testimg=""):
+        print("::::::: Test function started :::::::")
+        print("::::: Test camera and OCR :::::")
+        test_code = image_getter.test_func(testimg)
+        # test the decoder on a morse code block
+        print("\n::::: Test decoder :::::")
+        testout = decoder.decode_morse(test_code)
+        print("Morse code read from image: " + test_code, "Decoded message: " + testout)
+        print("::::::: Test fucntion finished :::::::")
+        if testout is not None:
+            return testout
+        else:
+            return "No text read from OCR."
+    #END TEST function
 
 
 # start program when running this script

@@ -1,61 +1,74 @@
 # imports: 
-# openCV for camera handling
-# Pillow for image procesing
+# openCV for camera handling and image processing
 # pytesseract as a python wrapper for the installed tesseract ocr engine
 import cv2
 import pytesseract
 
-# camera to be used
-camera = None
-# configurations for pytesseract call
-tess_config = r"--psm 11 tessedit_char_whitelist=-./"
+class ImageGetter():
+	# camera to be used
+	camera = None
+	# ocr language type and configurations for pytesseract call
+	tess_lang = r"morseocr"
+	tess_config = r"--psm 11 --tessdata-dir './tessdata/data/' -c tessedit_char_whitelist=.-"	# set tesseract to use page segmentation mode 11, set directory for languages and configs, limit to only recognising characters ".-"
 
-def start_this():
-	camera = cv2.VideoCapture(0) # just takes default cam for now # later: /dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920_554792EF-video-index0")
-	if not camera.isOpened():
-		return -1
-	return 0
+	def __init__(self):
+		""" Init method which also instanciates the camera for OpenCV """		
+		self.camera = cv2.VideoCapture(0) #access system's camera. 0 is default, 1+ is extra cameras, but the order can be sporadic 
+		if not self.camera.isOpened():
+			raise Exception("Camera opening failed!")
+		print("ImageGetter class initialised, camera access successful.")
 
-def end_this():
-	# close camera
-	camera.release()
-	return 0
+	def __del__(self):
+		""" Object deletion method to assure the camera resource is released again """
+		self.camera.release()
+		print("ImageGetter class deleted, camera released.")
 
-# retreive a frame from the open global camera and return it
-def cameraHandler():
-	if not camera.isOpened():
-		raise Exception("OpenCV: Open camera failed. Exiting.")
+	def camera_get_image(self):
+		""" Retreive a frame from the open camera and return it """
+		if not self.camera.isOpened():
+			raise Exception("Decoder Problem: OpenCV camera access failed! Please check if a camera is connected and functional.")
 
-	ret, frame = camera.read() # read returns: bool, frame
-	if ret:
-		print("got a frame! Saving it!")
-		cv2.imwrite("test.png", frame)
-		return frame
-	else:    # camera not open or other failure
-		return None
+		ret, frame = self.camera.read() # read returns: bool, frame
+		if ret:
+			return frame
+		else:    # camera not open or other failure
+			return None
 
+	def preprocess_image(self, image):
+		"""	Adjust the image to be better readable by tesseract OCR """
+		if image is not None:
+			# turn to grayscale to remove colour pixels
+			processedImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+			# reduce image to black and white at pixel threshold 64 to cut off background noise
+			processedImage = cv2.threshold(processedImage, 64, 255, cv2.THRESH_BINARY)[1]
+			# convert to RGB image, tesseract ocr prefers this
+			processedImage = cv2.cvtColor(processedImage, cv2.COLOR_BGR2RGB)	
+			return processedImage
+		else:
+			return None
 
-def preprocessImg(image):
-	if image is not None:
-		processedImage = cv2.threshold(image, 192, 255, cv2.THRESH_BINARY)[1] # reduce image to black and white and cut off background noise
+	def read_from_image(self, image):
+		""" Pass an opened image to the OCR engine """
+		if image is not None:
+			text = pytesseract.image_to_string(image, lang=self.tess_lang, config=self.tess_config)
+			return text
+		else:
+			return None
 
-		cv2.imwrite("test-return.png", processedImage)
-		procImg_rgb = cv2.cvtColor(processedImage, cv2.COLOR_BGR2RGB)	
-		cv2.imwrite("test-return2.png", processedImage)
-	
-		print(processedImage.shape)
-		return procImg_rgb
-	else:
-		return None
-
-def ocrHandler(image):
-	text = pytesseract.image_to_string(image, config=tess_config)
-	return text
-
-# to test program
-def test_func(iamgeStr):
-	testimg = cv2.imread(iamgeStr)
-	testimg2 = preprocessImg(testimg)
-	testtext = ocrHandler(testimg2)
-	# testtext = ocrHandler( cameraHandler() )
-	return testtext
+    #BEGIN TEST function
+	def test_func(self, imageStr=""):
+		"""Test function which includs saving the received image to disk"""
+		# if image file name provided, use this, otherwise use camera
+		if imageStr:
+				testimg = cv2.imread(imageStr)
+		else:
+				testimg = self.camera_get_image()
+		if testimg is not None:
+			testimg2 = self.preprocess_image(testimg)
+			testtext = self.read_from_image(testimg2)
+			cv2.imwrite("testimg-raw.png", testimg)
+			cv2.Imwrite("testimg-processed.png", testimg2)
+			return testtext
+		else:
+			return None
+	#END TEST function
