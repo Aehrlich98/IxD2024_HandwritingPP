@@ -10,6 +10,9 @@ from kivy.clock import Clock
 import image_getter
 import decoder
 
+import os
+os.environ['KIVY_GL_BACKEND'] = 'gl'
+
 
 class decoderUI(App):
 # Variables: update frequency for image decoding process, output text storage, storage for helper classes from custom modules 
@@ -17,11 +20,13 @@ class decoderUI(App):
     outputtext = "...Here you will soon see the decoded text."
     ocrhandler = None
     decodeHandler = None
+    top_label_text = "Hello, here you can see what text our image decoding program could recognise :)\nIt runs every " + str(update_freq_sec) + " seconds taking a picture with the webcam. try to only hold one line of code under the camera, make sure the paper is well lit. "
 
     #update function for the UI, when called, takes an image via ImageGetter class and rectrieves morse code from it, then decodes the text via the custom decoder module. 
     def update(self, *args):
         """
-        self.outputtext = self.test_all("")
+        #Test function for all parts Can be given a test image file instead of using the camera
+        self.outputtext = self.test_all("testimg.png")
         self.l.text = self.outputtext
         """
 
@@ -31,12 +36,13 @@ class decoderUI(App):
         self.clearText = decoder.decode_morse(self.codeText)
         print("Output code text: " + self.codeText, "\nOutput decoded text: " + self.clearText + "\n")
         self.l.text = self.clearText
+        
 
     def build(self):
         """ Build function needed for the Kivy UI module to build the inital UI upon class instantiation """
         self.baselayout = FloatLayout() # BoxLayout(orientation='vertical', padding=10, spacing=10)
         # constant header displaying the text below, to help explain what's going on.
-        self.header_label = Label(text= "Hello, here you can see what text our image decoding program could recognise :)\nIt runs every " + str(self.update_freq_sec) + " seconds taking a picture with the webcam.", 
+        self.header_label = Label(text= self.top_label_text, 
                                   font_size=32,
                                   size_hint=(0, 0.8),
                                   pos_hint={'x':0.5, 'y':0.5})
@@ -72,16 +78,19 @@ class decoderUI(App):
         self.ocrhandler = image_getter.ImageGetter()
         print("Camera set up successfull.\nStarted program.")
 
+
     #BEGIN TEST function
     def test_all(self, testimg=""):
         print("::::::: Test function started :::::::")
+        #Test functionality of the image receiving program and OCR model
         print("::::: Test camera and OCR :::::")
-        test_code = image_getter.test_func(testimg)
-        # test the decoder on a morse code block
+        test_code = self.ocrhandler.test_func(testimg)
+        print("Morse code read from image: " + test_code)
+        #Test functions for the decoder based on previously extracted code
         print("\n::::: Test decoder :::::")
         testout = decoder.decode_morse(test_code)
-        print("Morse code read from image: " + test_code, "Decoded message: " + testout)
-        print("::::::: Test fucntion finished :::::::")
+        print("Decoded message: " + testout)
+        print("::::::: Test function finished :::::::")
         if testout is not None:
             return testout
         else:

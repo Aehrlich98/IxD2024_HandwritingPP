@@ -9,11 +9,11 @@ class ImageGetter():
 	camera = None
 	# ocr language type and configurations for pytesseract call
 	tess_lang = r"morseocr"
-	tess_config = r"--psm 11 --tessdata-dir './tessdata/data/' -c tessedit_char_whitelist=.-"	# set tesseract to use page segmentation mode 11, set directory for languages and configs, limit to only recognising characters ".-"
+	tess_config = r"--psm 6 --tessdata-dir './morseocr' -c tessedit_char_whitelist=.-"	# set tesseract to use page segmentation mode 11, set directory for languages and configs, limit to only recognising characters ".-"
 
 	def __init__(self):
 		""" Init method which also instanciates the camera for OpenCV """		
-		self.camera = cv2.VideoCapture(0) #access system's camera. 0 is default, 1+ is extra cameras, but the order can be sporadic 
+		self.camera = cv2.VideoCapture(2) #access system's camera. 0 is default, 1+ is extra cameras, but the order can be sporadic 
 		if not self.camera.isOpened():
 			raise Exception("Camera opening failed!")
 		print("ImageGetter class initialised, camera access successful.")
@@ -40,7 +40,7 @@ class ImageGetter():
 			# turn to grayscale to remove colour pixels
 			processedImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 			# reduce image to black and white at pixel threshold 64 to cut off background noise
-			processedImage = cv2.threshold(processedImage, 64, 255, cv2.THRESH_BINARY)[1]
+			processedImage = cv2.threshold(processedImage, 72, 255, cv2.THRESH_BINARY)[1]
 			# convert to RGB image, tesseract ocr prefers this
 			processedImage = cv2.cvtColor(processedImage, cv2.COLOR_BGR2RGB)	
 			return processedImage
@@ -58,6 +58,7 @@ class ImageGetter():
     #BEGIN TEST function
 	def test_func(self, imageStr=""):
 		"""Test function which includs saving the received image to disk"""
+		testimg = None
 		# if image file name provided, use this, otherwise use camera
 		if imageStr:
 				testimg = cv2.imread(imageStr)
@@ -67,7 +68,7 @@ class ImageGetter():
 			testimg2 = self.preprocess_image(testimg)
 			testtext = self.read_from_image(testimg2)
 			cv2.imwrite("testimg-raw.png", testimg)
-			cv2.Imwrite("testimg-processed.png", testimg2)
+			cv2.imwrite("testimg-processed.png", testimg2)
 			return testtext
 		else:
 			return None
