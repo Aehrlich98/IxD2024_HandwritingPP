@@ -53,12 +53,15 @@ morse_dict = {
     "-..-." : "/"
 }
 
+
 def decode_morse(morseCode):
     """
     Receive a morse code as strings of '. -' and break it down into the individual symbomls the OCR recognised
     Then recombine the individual letters 
     """
+    translation_failed = False
     output = ""
+    codesign_failed_list = []
     # if ocr engine fails and returns an empty string, return and pass an error message to the UI
     if not morseCode:
         output = "Error: didn't receive a proper code to decode. This can happen if the OCR engine failed to recognise the image.\nTry to center the code under the camera, or write it again."
@@ -91,17 +94,24 @@ def decode_morse(morseCode):
                     tmpout[i][j].append(letter)
                 else:                           # If key not found, give default char '⚠' and output warning
                     tmpout[i][j].append('\u26A0')
+                    translation_failed = True
+                    codesign_failed_list.append(sign)
                     print("WARNING: Code symbol not found in translation dictionary: " + sign)
     del tmpin # mark to free memory
     #print(tmpout) #test
 
+    if translation_failed:
+        output = "Oops, the decoder failed to recognise all or part of the code:\n"
+        for sign in codesign_failed_list:
+            output += sign + "\n"
+        output += "\nCode translation:\n\n"
     #3 Re-combine into string and provide output
     for i in tmpout:
         for j in i:
             jword = "".join(j)
             jword += " "
             output += jword
-        output += "\n"
+        #output += "\n" #don't restore new lines from ocr as it can make the text block huge!
         
     del tmpout # mark to free memory
     return output
