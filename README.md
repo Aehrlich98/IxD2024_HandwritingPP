@@ -1,12 +1,14 @@
 # WIPWIPWIPWIPWIPWIPWIPWIP
 # Handwriting++
-#####  A project for the IxD 2024 course by KH Berlin and the FU Berlin
-Handwriting++ aims to support a new synergy of analogue an digital writing and data transfer by merging the multi-mediality of digital processes with the manual art of handwritting.
+######  A project for the IxD 2024 course by KH Berlin and the FU Berlin ######
+##### Handwriting++ aims to support a new synergy of analogue an digital writing and data transfer by merging the multi-mediality of digital processes with the manual art of handwritting. #####
 
-In our modern lives, digital communication has become the quasi default mode of interaction, allowing us to share any kind of data instantly with anyone. With that, it is no surprise that handwriting is becoming less important. And yet, it remains a constant in our lives: in our research, we discovered people still prefer handwriting for storing their personal information, avoiding digital distractions, and sharing personal messages with loved ones.
+In our modern lives, digital communication has become the quasi default mode of interaction, allowing us to share any kind of data instantly with anyone. With that, it is no surprise that handwriting is becoming less important. And yet, it remains a constant in our lives: 
+In our research, we discovered people still prefer handwriting for storing their personal information, avoiding digital distractions, and sharing personal messages with loved ones.
+Handwriting++ is a concept for augmenting our handwriting. It preserves the personality of the text but adds some of the convenience of the digital space. Imagine watching a video that you want to share with a friend, maybe not through a text or email, but in a handwritten letter. 
+With Handwriting++, you can simply underline the title or a key phrase in your note to link it to digital content. Your friend can then scan the underlined text with an accompanying app and is forwarded to the video—similar to a QR-Code. 
 
-Handwriting++ is a concept for augmenting our handwriting. It preserves the personality of the text but adds some of the convenience of the digital space. Imagine watching a video that you want to share with a friend, maybe not through a text or email, but in a handwritten letter. With Handwriting++, you can simply underline the title or a key phrase in your note to link it to digital content. Your friend can then scan the underlined text with an accompanying app and is forwarded to the video — similar to a QR-Code.
-
+What's even more exciting is that you can write an entire letter or message in the Handwriting++ code. The receiver can scan the whole text, and it will automatically be translated into normal language. This seamless blend of analog and digital enhances how we share and experience information.
 
 
 ## Table of Contents  
