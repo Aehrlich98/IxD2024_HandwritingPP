@@ -3,6 +3,8 @@
 ######  A project for the IxD 2024 course by KH Berlin and the FU Berlin ######
 ##### Handwriting++ aims to support a new synergy of analogue an digital writing and data transfer by merging the multi-mediality of digital processes with the manual art of handwritting. #####
 
+![Arduino with 'lotta wires :P](https://github.com/Aehrlich98/IxD2024_HandwritingPP/blob/main/Prototype.JPG?raw=true)
+
 In our modern lives, digital communication has become the quasi default mode of interaction, allowing us to share any kind of data instantly with anyone. With that, it is no surprise that handwriting is becoming less important. And yet, it remains a constant in our lives: 
 In our research, we discovered people still prefer handwriting for storing their personal information, avoiding digital distractions, and sharing personal messages with loved ones.
 Handwriting++ is a concept for augmenting our handwriting. It preserves the personality of the text but adds some of the convenience of the digital space. Imagine watching a video that you want to share with a friend, maybe not through a text or email, but in a handwritten letter. 
@@ -25,9 +27,6 @@ Here you will find the software part of this project. All project files rest on 
 
 The project is built around an Arduino UNO R3 board with a solenoid as a linear motor and a rotation sensor, other equipment like jumper wires, a board, pen, materials to produce the holder, and more are also needed. 
 This image shows a possible wireing of the setup. 
-
-SHOULDWESHOWANIMAGEHERE???
-![Arduino with 'lotta wires :P](https://github.com/Aehrlich98/IxD2024_HandwritingPP/blob/main/Prototype.JPG?raw=true)
 
 The arduino code requires the [Arduino IDE](https://www.arduino.cc/en/software) to pass the instructions to a compatible microcontroller. 
 
