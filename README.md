@@ -72,6 +72,9 @@ To start the encoding project, simply connect the Arduino to your computer and r
 
 <img src="https://github.com/Aehrlich98/IxD2024_HandwritingPP/blob/main/EncodingRunning.gif?raw=true" width="750"/>
 
+<img src="https://github.com/Aehrlich98/IxD2024_HandwritingPP/blob/main/PenInAction.gif?raw=true" width="750"/>
+
+
 #### decoding ####
 
 To start the decoding project run the UI.py file in its folder, it will automatically import the other two class/module files 'image_getter.py' and 'decoder.py'. 
