@@ -56,7 +56,7 @@ morse_dict = {
 
 def decode_morse(morseCode):
     """
-    Receive a morse code as strings of '. -' and break it down into the individual symbomls the OCR recognised
+    Receive a morse code as strings of '. -' and break it down into the individual symbols the OCR recognised
     Then recombine the individual letters 
     """
     translation_failed = False
@@ -64,7 +64,7 @@ def decode_morse(morseCode):
     codesign_failed_list = []
     # if ocr engine fails and returns an empty string, return and pass an error message to the UI
     if not morseCode:
-        output = "Error: didn't receive a proper code to decode. This can happen if the OCR engine failed to recognise the image.\nTry to center the code under the camera, or write it again."
+        output = "Error: didn't find anything to decode. This can happen if the OCR engine failed to recognise the image.\nTry to center the code under the camera, or write it again."
         return output
     
     #1 Take morse code input and disassemple into nested lists of lines, words, and symbols
@@ -100,6 +100,7 @@ def decode_morse(morseCode):
     del tmpin # mark to free memory
     #print(tmpout) #test
 
+    # list signs this failed to decode for transparency
     if translation_failed:
         output = "Oops, the decoder failed to recognise all or part of the code:\n"
         for sign in codesign_failed_list:

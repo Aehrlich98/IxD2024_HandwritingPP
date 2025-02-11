@@ -10,22 +10,19 @@ from kivy.clock import Clock
 import image_getter
 import decoder
 
-import os
-os.environ['KIVY_GL_BACKEND'] = 'gl'
-
 
 class decoderUI(App):
 # Variables: update frequency for image decoding process, output text storage, storage for helper classes from custom modules 
-    update_freq_sec = 10
+    update_freq_sec = 15
     outputtext = "...Here you will soon see the decoded text."
     ocrhandler = None
     decodeHandler = None
-    top_label_text = "Hello, here you can see what text our image decoding program could recognise :)\nIt runs every " + str(update_freq_sec) + " seconds taking a picture with the webcam. try to only hold one line of code under the camera, make sure the paper is well lit. "
+    top_label_text = "Hello, here you can see what secrets our image decoding program could uncover :)\nIt runs every " + str(update_freq_sec) + " seconds taking a picture with the webcam.\nTry to only center one line of code under the camera, make sure the paper is well lit and there is nothing else in the way."
 
     #update function for the UI, when called, takes an image via ImageGetter class and rectrieves morse code from it, then decodes the text via the custom decoder module. 
     def update(self, *args):
         """
-        #Test function for all parts Can be given a test image file instead of using the camera
+        # Test function for all parts. Parameter either image file name or emtpy to use camera
         self.outputtext = self.test_all("testimg.png")
         self.l.text = self.outputtext
         """
@@ -48,7 +45,7 @@ class decoderUI(App):
                                   pos_hint={'x':0.5, 'y':0.5})
         self.baselayout.add_widget(self.header_label)
         # Label with dynamic size depending on the amount of text displayed:
-        # thanks to Stackoverflow :P (https://stackoverflow.com/questions/18670687/how-i-can-adjust-variable-height-text-property-kivy)
+        # Thanks, Stackoverflow :P (https://stackoverflow.com/questions/18670687/how-i-can-adjust-variable-height-text-property-kivy)
         self.b = GridLayout(
             cols=1,
             pos_hint={
@@ -77,6 +74,7 @@ class decoderUI(App):
         print("Started program. Setting up...")
         self.ocrhandler = image_getter.ImageGetter()
         print("Camera set up successfull.\nStarted program.")
+
 
 
     #BEGIN TEST function

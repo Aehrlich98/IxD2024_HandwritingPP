@@ -9,11 +9,11 @@ class ImageGetter():
 	camera = None
 	# ocr language type and configurations for pytesseract call
 	tess_lang = r"morseocr"
-	tess_config = r"--psm 6 --tessdata-dir './morseocr' -c tessedit_char_whitelist=.-"	# set tesseract to use page segmentation mode 11, set directory for languages and configs, limit to only recognising characters ".-"
+	tess_config = r"-c tessedit_char_whitelist=.-"	#Not needed --psm 6 #Set tesseract to use page segmentation mode, limit to only recognising characters ".-"
 
 	def __init__(self):
 		""" Init method which also instanciates the camera for OpenCV """		
-		self.camera = cv2.VideoCapture(2) #access system's camera. 0 is default, 1+ is extra cameras, but the order can be sporadic 
+		self.camera = cv2.VideoCapture(0) #access system's camera. 0 is default, 1+ denotes extra cameras, but the order can be sporadic 
 		if not self.camera.isOpened():
 			raise Exception("Camera opening failed!")
 		print("ImageGetter class initialised, camera access successful.")
@@ -37,9 +37,16 @@ class ImageGetter():
 	def preprocess_image(self, image):
 		"""	Adjust the image to be better readable by tesseract OCR """
 		if image is not None:
+			# camera is possitions upside down compared to the pages with code on them so flip on it's head
+			image = cv2.flip(image, 0)
 			# turn to grayscale to remove colour pixels
 			processedImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-			# reduce image to black and white at pixel threshold 64 to cut off background noise
+			# check if image upscaling is needed, as tesseract struggles with to small characters, upscale by simply doubling every pixel
+			img_height, img_width = processedImage.shape[:2]
+			if img_height < 1000 and img_width < 1000:
+				processedImage = cv2.resize(processedImage, None, fx = 2.0, fy = 2.0,  interpolation= cv2.INTER_NEAREST)
+				cv2.imwrite("tttttt.png", processedImage)
+			# reduce image to black and white at a pixel threshold to cut off background noise, the darker the image the higher it needs to be
 			processedImage = cv2.threshold(processedImage, 72, 255, cv2.THRESH_BINARY)[1]
 			# convert to RGB image, tesseract ocr prefers this
 			processedImage = cv2.cvtColor(processedImage, cv2.COLOR_BGR2RGB)	
@@ -55,9 +62,11 @@ class ImageGetter():
 		else:
 			return None
 
+
+
     #BEGIN TEST function
 	def test_func(self, imageStr=""):
-		"""Test function which includs saving the received image to disk"""
+		"""Test function which includes saving the received image to disk"""
 		testimg = None
 		# if image file name provided, use this, otherwise use camera
 		if imageStr:
