@@ -27,7 +27,7 @@ The project is built around an Arduino UNO R3 board with a solenoid as a linear 
 This image shows a possible wireing of the setup. 
 
 SHOULDWESHOWANIMAGEHERE???
-![Arduino with 'lotta wires :P](handwritingpp_arduino_image.png)
+![Arduino with 'lotta wires :P](https://github.com/Aehrlich98/IxD2024_HandwritingPP/blob/main/Prototype.JPG?raw=true)
 
 The arduino code requires the [Arduino IDE](https://www.arduino.cc/en/software) to pass the instructions to a compatible microcontroller. 
 
