@@ -33,6 +33,7 @@ The arduino code requires the [Arduino IDE](https://www.arduino.cc/en/software) 
 The user facing software parts of this project are built in Python 3. It is recommended to use atleast Python 3.10 to avoid potential compatibility issues but there are no dependecies for specific package versions.
 The following libraries are used for core features of this project:
 * The [Kivy](https://pypi.org/project/Kivy/) UI library for the UI and runtime structure
+* [pySerial](https://pythonhosted.org/pyserial/) Python library enabling serial communication with the Arduino Uno
 * [OpenCV](https://pypi.org/project/opencv-python/) for handling image recording and modulation
 * [pytesseract](https://pypi.org/project/pytesseract/) as a wrapper for the Tesseract OCR system installation
 
