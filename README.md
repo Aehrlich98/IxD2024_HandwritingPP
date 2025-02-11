@@ -55,7 +55,14 @@ After installation find the 'tessdata' directory containing tesseract language a
 `/usr/share/tesseract-ocr/X.XX/tessdata`, where X.XX is the version number installed. On Windows it might be under `%USERPROFILE%\AppData\Local\Programs\Tesseract-OCR\tessdata`.
 
 ### Running the programs ###
-To start the project simply navigate to the "encoding" or "decoding" folder and run the UI.py script file, no parameters are required (though Kivy supports a few ,e.g. '-d' for a better debugging output in the console). The programs in each folder are independent of each other and can be run separately.
+
+#### encoding ####
+To start the encoding project, simply connect the Arduino to your computer and run the UI.py script—no parameters are required. The UI.py can be found in the encoding folder. A serial connection should open automatically, enabling communication between the Arduino and the PC. If everything is set up correctly, you will see an interface with a text input field prompting you to enter a word. Once you provide a word, it will be translated into Morse code and written using the pen.
+
+#### decoding ####
+
+To start the decoding project.... TO DO
+The programs in each folder are independent of each other and can be run separately.
 
 _Please note that the OCR model is not very reliable as of yet. Tesseract OCR is not aimed at recognising handwritting from camera images and we didn't quite get the training just right to minimise recognition errors._
 
