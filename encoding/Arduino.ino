@@ -21,7 +21,6 @@ void setup() {
   digitalWrite(PEN_PIN, LOW);
 }
 
-//TO DO: listen for commands(U or D) and do that then Move Pen
 void loop() {
   // Aktuellen CLK-Status lesen
   int currentCLKState = digitalRead(CLK);
