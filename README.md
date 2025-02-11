@@ -70,7 +70,7 @@ Under MacOS the directory might differ depending on your isntallation method, fi
 To start the encoding project, simply connect the Arduino to your computer and run the UI.py script—no parameters are required. The UI.py can be found in the encoding folder. A serial connection should open automatically, enabling communication between the Arduino and the PC. If everything is set up correctly, you will see an interface with a text input field prompting you to enter a word. Once you provide a word, it will be translated into Morse code and written using the pen.
 
 
-![GIF showing the encoding Software](https://github.com/Aehrlich98/IxD2024_HandwritingPP/blob/main/EncodingRunning.gif?raw=true)
+<img src="https://github.com/Aehrlich98/IxD2024_HandwritingPP/blob/main/EncodingRunning.gif?raw=true" width="750"/>
 
 #### decoding ####
 
