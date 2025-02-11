@@ -1,168 +1,267 @@
+import time
+import threading
+from functools import partial
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.floatlayout import FloatLayout
+from kivy.core.window import Window
 from kivy.clock import Clock
 import serial
 
+
 class ArduinoApp(App):
     def build(self):
-        # Set up the layout
+        Window.fullscreen = 'auto'
         self.layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        Window.bind(on_keyboard=self.on_keyboard)
 
-        # Morse-Code String und LookUp String
-        self.morse_string = ""  # Der Morsecode wird vom Arduino empfangen
-        self.look_up_symbol = []  # LookUp Array für Symbol-Index
-        self.symbol_labels = []  # Labels für jedes Symbol im Morsecode
+        # Variablen initialisieren
+        self.morse_string = ""
+        self.command_list = []     # Liste der Befehle für jeden Impuls
+        self.symbol_indices = []   # Ordnet jedem Impuls den Index des zugehörigen Morse-Symbols zu
+        self.symbol_labels = []    # Labels für die Anzeige des Morse-Codes
 
-        # Setup serial connection
-        self.serial_port = serial.Serial('COM3', 115200, timeout=1)
+        #Timer für Timeout
+        self.last_serial_time = time.time()
+        self.last_processed_time = None
 
-        # TextInput für die String-Eingabe: Nur eine Zeile zulassen
+        # Serielle Schnittstelle initialisieren
+        try:
+            # Timeout auf 0.5 s gesetzt, sodass readline() nicht zu lange blockiert
+            self.serial_port = serial.Serial('COM3', 230400, timeout=0.5)       #BaudeRate evtl anpassen
+            print("Serielle Schnittstelle erfolgreich geöffnet.")
+        except Exception as e:
+            print(f"Fehler beim Öffnen des seriellen Ports: {e}")
+            self.serial_port = None
+
+        # Eingabefeld
         self.input_text = TextInput(
-            hint_text="Geben Sie einen String ein", 
-            size_hint=(1, None), 
-            height=100,
-            multiline=False  # Nur eine Zeile zulassen
+            hint_text="Geben Sie ein Wort ein...",
+            size_hint=(1, None),
+            height=80,
+            font_size = 30,
+            multiline=False
         )
-        # Wenn Enter gedrückt wird, soll der Senden-Button ausgelöst werden
-        self.input_text.bind(on_text_validate=self.send_string)
+        self.input_text.bind(on_text_validate=self.process_string)
 
-        # Button zum Senden des Strings an Arduino
+        # button zum Senden
         self.send_button = Button(text="An Stift senden", size_hint=(1, None), height=100)
-        self.send_button.bind(on_press=self.send_string)
+        self.send_button.bind(on_press=self.process_string)
 
-        # Füge Widgets hinzu
+        # Labels für Aufforderungen
+        self.prompt_label = Label(text="Geben Sie ein Wort ein welches in Morsecode umwandelt werden soll:", font_size=35, size_hint=(1, None), height=50)
+        self.explain_label = Label(
+            text="Fahre mit dem Stift über das Papier, um den Morsecode zu schreiben.",
+            font_size=35, 
+            size_hint=(1, None), 
+            height=50, 
+            padding = [0,0,0,30]
+        )
+
+        # Eingabeaufforderung Textfeld und Button anzeigen
+        self.layout.add_widget(self.prompt_label)
         self.layout.add_widget(self.input_text)
         self.layout.add_widget(self.send_button)
 
-        # Label für die Aufforderung
-        self.prompt_label = Label(text="Bitte Wort eingeben:", font_size=24, size_hint=(1, None), height=50)
-        #self.layout.add_widget(self.prompt_label)
-        
-        # Label für Erklärung
-        self.explain_label = Label(text="Fahre mit dem Stift über das Papier um den Morsecode zu schreiben.", 
-                                   font_size=24, size_hint=(1, None), height=50)
+        # Starte den separaten Thread
+        if self.serial_port and self.serial_port.is_open:
+            self.stop_event = threading.Event()
+            self.serial_thread = threading.Thread(target=self.serial_thread_func, daemon=True)
+            self.serial_thread.start()
+            print("Serieller Lese-Thread gestartet.")
+        else:
+            print("Serielle Schnittstelle nicht verfügbar oder nicht geöffnet.")
 
-        # Schedule serial reading
-        Clock.schedule_interval(self.read_from_serial, 0.01)
+        # Timeout-Prüfung jede sek
+        Clock.schedule_interval(self.check_process_timeout, 1)
 
         return self.layout
+    
+    
+    def on_keyboard(self, window, key, scancode, text, modifiers):
+        # Esc wird abgefangen
+        if key == 27:  # (27 = Esc)
+          return True 
+    
 
-    def send_string(self, instance):
-        """Sendet den eingegebenen String an den Arduino."""
+    def process_string(self, *args):
+        # Verarbeitet den eingegebenen Text
         input_string = self.input_text.text.strip()
         if input_string:
-            # Sendet den String über die serielle Schnittstelle an Arduino
-            self.serial_port.write((input_string + '\n').encode())
-            self.input_text.text = ""  # Eingabefeld zurücksetzen
-            print(f"String gesendet: {input_string}")
+            self.last_processed_time = time.time()
+            self.morse_string = self.text_to_morse(input_string)
+            print(f"Text: {input_string} -> Morse: {self.morse_string}")
+            self.command_list, self.symbol_indices = self.convert_morse_to_commands(self.morse_string)
+            self.initialize_ui()
+            if self.serial_port and self.serial_port.is_open:
+                self.serial_port.write("N\n".encode()) #Reset Arduino Impulse Count
+            else:
+                print("Serielle Schnittstelle nicht verfügbar")
+            self.input_text.text = ""
+
+    def serial_thread_func(self):
+        # Thread um Serielle Nachrichten einzulesen
+        while not self.stop_event.is_set():
+            if self.serial_port and self.serial_port.is_open:
+                try:
+                    line = self.serial_port.readline()
+                    if line:
+                        try:
+                            line = line.decode('utf-8').strip()
+                        except Exception as decode_err:
+                            print(f"Fehler beim Dekodieren: {decode_err}")
+                            continue
+                        self.last_serial_time = time.time()
+                        print(f"Serielle Nachricht empfangen: '{line}'")
+                        # Übergabe der Zeile an die UI-Verarbeitung im Hauptthread
+                        Clock.schedule_once(partial(self.process_serial_line, line))
+                    else:
+                        time.sleep(0.0001)
+                except Exception as e:
+                    print(f"Error in serial thread: {e}")
+            else:
+                time.sleep(0.0001)
+
+            # Timeout Prüfung
+            if time.time() - self.last_serial_time >= 60:
+                print("Timeout: Keine Serial-Nachricht in 60 Sekunden erhalten. Setze UI zurück.")
+                Clock.schedule_once(lambda dt: self.reset_ui_for_new_word())
+                self.last_serial_time = time.time()
+
+
+    def process_serial_line(self, line, dt):
+        if line.isdigit():
+            impulse_count = int(line)
+            self.update_status(impulse_count)
+            print(f"Impulse Count: {impulse_count}")
+            self.send_command(impulse_count)
+        elif line == "Ready":
+            self.reset_ui_for_new_word()
+            print("UI für neues Wort zurückgesetzt")
         else:
-            print("Bitte einen String eingeben")
+            print(f"Unbekannte Nachricht: '{line}'")
 
-    def read_from_serial(self, dt):
-        """Liest Daten kontinuierlich von der seriellen Schnittstelle."""
-        try:
-            if self.serial_port.in_waiting > 0:
-                line = self.serial_port.readline().decode('utf-8').strip()
+    def check_process_timeout(self, dt):
+        # Prüft ob seit der Eingabe mehr als 120 Sekunden vergangen sind.
+        if self.last_processed_time is not None:
+            if time.time() - self.last_processed_time >= 120:
+                print("Timeout: 120 Sekunden seit der Verarbeitung des Strings vergangen. Setze UI zurück.")
+                self.reset_ui_for_new_word()
 
-                if line.startswith("Morsecode:"):
-                    # Empfange den Morse-Code-String
-                    self.morse_string = line.split(":")[1]
-                    self.initialize_ui()
-                    print(f"Morse-Code empfangen: {self.morse_string}")
 
-                elif line.startswith("LookUp:"):
-                    # Empfange den LookUp-String und umwandeln in eine Liste von Ganzzahlen
-                    look_up_string = line.split(":")[1]
-                    self.look_up_symbol = [int(x) for x in look_up_string.split(',')]
-                    print(f"LookUp Array empfangen: {self.look_up_symbol}")
+    def send_command(self, impulse_count):
+        if impulse_count < len(self.command_list):
+            command = self.command_list[impulse_count]
+            if command is None:
+                pass
+            elif command == 0:
+                self.serial_port.write("U\n".encode())
+            elif command == 1:
+                self.serial_port.write("D\n".encode())
+        else:
+            self.reset_ui_for_new_word()
+            
 
-                elif line.isdigit():
-                    # Aktualisiere den Status basierend auf impulseCount
-                    impulse_count = int(line)
-                    self.update_status(impulse_count)
-                    print(f"Impulse Count: {impulse_count}")
 
-                elif line == "Bitte einen neuen String eingeben:":
-                    # Wenn der Arduino diese Nachricht sendet, UI zurücksetzen
-                    self.reset_ui_for_new_word()
-                    print("UI für neues Wort zurückgesetzt")
-        except Exception as e:
-            print(f"Error reading from serial: {e}")
+    def text_to_morse(self, text):
+        morse_dict = {
+            'A': '.-',    'B': '-...',  'C': '-.-.', 'D': '-..',  'E': '.',
+            'F': '..-.',  'G': '--.',   'H': '....', 'I': '..',   'J': '.---',
+            'K': '-.-',   'L': '.-..',  'M': '--',   'N': '-.',   'O': '---',
+            'P': '.--.',  'Q': '--.-',  'R': '.-.',  'S': '...',  'T': '-',
+            'U': '..-',   'V': '...-',  'W': '.--',  'X': '-..-', 'Y': '-.--',
+            'Z': '--..',  '1': '.----', '2': '..---','3': '...--','4': '....-',
+            '5': '.....', '6': '-....', '7': '--...', '8': '---..','9': '----.',
+            '0': '-----', ' ': '/',
+        }
+        return ' '.join(morse_dict.get(char.upper(), '') for char in text)
+
+    def convert_morse_to_commands(self, morse_code):
+        """
+        Konvertiert den Morsecode in zwei Listen:
+         - command_list: enthält für jeden Impuls 0 (für "U") oder 1 (für "D")
+         - symbol_indices: ordnet jedem Impuls den Index des zugehörigen Morse-Symbols zu
+        """
+        command_list = []
+        symbol_indices = []
+        symbol_index = 0
+
+        for c in morse_code:
+            if c == '.':
+                command_list.extend([0, 0, 1])
+                symbol_indices.extend([symbol_index, symbol_index, symbol_index])
+                symbol_index += 1
+            elif c == '-':
+                command_list.extend([0, 0, 1, 1, 1, 1])
+                symbol_indices.extend([symbol_index] * 6)
+                symbol_index += 1
+            elif c == ' ':
+                command_list.extend([0, 0])
+                symbol_indices.extend([symbol_index, symbol_index])
+                symbol_index += 1
+            elif c == '/':
+                command_list.extend([0, 0])
+                symbol_indices.extend([symbol_index, symbol_index])
+                symbol_index += 1
+        return command_list, symbol_indices
 
     def initialize_ui(self):
-        """Initialisiert die Benutzeroberfläche basierend auf dem Morsecode."""
-        Clock.schedule_once(self._initialize_ui)
-
-    def _initialize_ui(self, dt):
-        """Setzt die UI auf und fügt Labels hinzu."""
-        self.layout.clear_widgets()  # Entfernt alte Labels
+        self.serial_port.write("N\n".encode())
+        self.layout.clear_widgets()
         self.symbol_labels = []
-
-        # Füge das Label für die Eingabeaufforderung hinzu
-        #self.layout.add_widget(self.prompt_label)
         self.layout.add_widget(self.explain_label)
-
-        # Äußeres FloatLayout für vollständige Zentrierung
         float_layout = FloatLayout()
-
-        # Inneres BoxLayout für Morse-Code-Symbole
         morse_layout = BoxLayout(orientation='horizontal', size_hint=(None, None), height=100)
-        morse_layout.bind(minimum_width=morse_layout.setter('width'))  # Automatische Breitenanpassung
-        morse_layout.pos_hint = {'center_x': 0.5, 'center_y': 0.5}  # Exakte Zentrierung
+        morse_layout.bind(minimum_width=morse_layout.setter('width'))
+        morse_layout.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
 
-        # Morse-Code String darstellen
         for symbol in self.morse_string:
             label = Label(text=symbol, color=(0.5, 0.5, 0.5, 1), font_size=80, bold=True, size_hint=(None, 1))
-            label.bind(texture_size=label.setter('size'))  # Automatische Breitenanpassung
+            label.bind(texture_size=label.setter('size'))
             self.symbol_labels.append(label)
             morse_layout.add_widget(label)
 
         float_layout.add_widget(morse_layout)
-        self.layout.add_widget(float_layout)  # Füge zentriertes Layout hinzu
-
-        # Füge die Eingabe und den Senden-Button am unteren Rand hinzu
-        self.layout.add_widget(self.input_text)
-        self.layout.add_widget(self.send_button)
+        self.layout.add_widget(float_layout)
 
     def reset_ui_for_new_word(self):
-        """Setzt die UI zurück, um den neuen String einzugeben."""
-        # Entferne den Morsecode und führe eine Aufforderung ein
+        self.serial_port.write("N\n".encode())
         self.morse_string = ""
-        self.look_up_symbol = []
+        self.command_list = []
+        self.symbol_indices = []
         self.symbol_labels = []
-
-        # Setze das Label auf "Bitte Wort eingeben:"
-        self.prompt_label.text = "Bitte Wort eingeben:"
-        self.layout.clear_widgets()  # Entfernt alle Widgets
-        self.layout.add_widget(self.prompt_label)  # Zeigt das Aufforderungslabel an
-
-        # Zeigt das Eingabefeld und den Senden-Button an
+        self.last_processed_time = None
+        self.prompt_label.text = "Geben Sie ein Wort ein welches in Morsecode umwandelt werden soll:"
+        self.layout.clear_widgets()
+        self.layout.add_widget(self.prompt_label)
         self.layout.add_widget(self.input_text)
         self.layout.add_widget(self.send_button)
+        #print("UI zurückgesetzt")
 
     def update_status(self, impulse_count):
-        """Aktualisiert die Statusanzeige basierend auf impulseCount."""
+        #Aktualisiert die Anzeige, basierend auf dem Impulszähler.
         Clock.schedule_once(lambda dt: self._update_status(impulse_count))
 
     def _update_status(self, impulse_count):
-        """Färbt die Symbole grün, die bereits geschrieben wurden."""
-        try:
-            # Verwende lookUpSymbol Array
-            if impulse_count < len(self.look_up_symbol):
-                current_symbol_index = self.look_up_symbol[impulse_count]
+        if impulse_count < len(self.symbol_indices):
+            current_symbol_index = self.symbol_indices[impulse_count]
+            for i, label in enumerate(self.symbol_labels):
+                label.color = (0, 1, 0, 1) if i <= current_symbol_index else (0.5, 0.5, 0.5, 1)
+        else:
+            self.reset_ui_for_new_word()
 
-                # Symbole grün färben, wenn der Index erreicht ist
-                for i, label in enumerate(self.symbol_labels):
-                    if i <= current_symbol_index:
-                        label.color = (0, 1, 0, 1)  # Grün für geschrieben
-                    else:
-                        label.color = (0.5, 0.5, 0.5, 1)  # Grau für noch nicht geschrieben
-        except ValueError as e:
-            print(f"Error updating status: {e}")
+    def on_stop(self):
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.close()
+        if hasattr(self, 'stop_event'):
+            self.stop_event.set()
+        if hasattr(self, 'serial_thread'):
+            self.serial_thread.join(timeout=1)
+        print("App beendet und Ressourcen freigegeben.")
+
 
 if __name__ == '__main__':
     ArduinoApp().run()
