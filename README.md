@@ -59,7 +59,7 @@ For e.g. Debian based linux distributions you can install it via apt:
 On macOS tesseract can be installed via Mac Ports or Home Brew. For Windows supported installers exist. See the [official repository](https://github.com/tesseract-ocr/tesseract) and [documentation](https://tesseract-ocr.github.io/tessdoc/Installation.html).  
 
 
-After installation copy the contents of the _'/decoding/tessdata'_ folder from here to the one of your Tesseract installation. 
+After installation copy the contents of the _'/decoding/morseocr'_ folder from here to the _'tessdata'_ folder of your Tesseract installation.<br/>
 On Debian based systems this folder can usually be found under `/usr/share/tesseract-ocr/X.XX/tessdata`, where X.XX is the version number installed.<br/>
 On Windows it might be under `%USERPROFILE%\AppData\Local\Programs\Tesseract-OCR\tessdata`, if installed locally.<br/>
 Under MacOS the directory might differ depending on your isntallation method, find it using e.g. `brew list tesseract`, if installed via Home Brew.
@@ -81,8 +81,8 @@ To start the decoding project run the UI.py file in its folder, it will automati
 A simple black window will open, displaying a headline text and below the decoded message. 
 Make sure that a camera is connected to the system and fully framing the code you wish to translate. 
 
-For the purposes of the exhibition the program will automatically take a picture every 15 seconds and pass it through the OCR and decoding routines. Close the window to quit the program. _Please note that this will probably not be very accurate, assure good lighting and centering of the code image in a straight line to increase effectiveness, but that might still not be enough.<br/>
-The program should display what parts of the text it failed to recognise._
+For the purposes of the exhibition the program will automatically take a picture every 15 seconds and pass it through the OCR and decoding routines. Close the window to quit the program. <br/>
+_Please note that this will probably not be very accurate, assure good lighting and centering of the code image in a straight line to increase effectiveness, but that might still not be enough. The program should display what parts of the text it failed to recognise._
 
 ### Acknowledgements ###
 Thanks to all the amazing people that have helped us in this project: 
