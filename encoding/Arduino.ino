@@ -1,6 +1,6 @@
 #define CLK 2  // Pin für CLK (Clock)
 #define DT 3   // Pin für DT (Data)
-#define PEN_PIN 9
+#define PEN_PIN 9    // Pin für solenoid
 
 volatile int impulseCount = 0; // Anzahl der Impulse
 int lastCLKState;             // Speichert den vorherigen CLK-Status
